@@ -1,5 +1,7 @@
 # Low-latency UDP packet parser (SystemVerilog)
 
+[![lint and simulate](https://github.com/Daevin04/sv-packet-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/Daevin04/sv-packet-parser/actions/workflows/ci.yml)
+
 A cut-through Ethernet/IPv4/UDP frame parser that filters a fixed-format
 application message and emits a response, with latency measured in hardware.
 
