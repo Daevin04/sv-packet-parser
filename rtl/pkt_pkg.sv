@@ -1,8 +1,4 @@
-// Frame layout constants for an Ethernet II / IPv4 / UDP frame carrying a
-// fixed-format application message.
-//
-// Offsets are byte positions counted from the first byte of the destination
-// MAC address, which is byte 0 of the frame as it arrives from the PHY.
+// Fixed frame geometry for Ethernet II / IPv4 / UDP.
 //
 //   0  .. 5    destination MAC
 //   6  .. 11   source MAC
@@ -12,15 +8,17 @@
 //   34 .. 35   UDP source port
 //   36 .. 37   UDP destination port
 //   38 .. 41   UDP length, checksum
-//   42 .. 43   message type      |
-//   44 .. 45   symbol id         |  fixed-format application payload
-//   46 .. 49   price             |
-//   50 .. 53   quantity          |
+//   42 ..      application payload  <- layout is configuration, not geometry
+//
+// Only the parts that are the same for every UDP frame live here. Where the
+// payload's fields sit is a property of whatever protocol is riding on top, so
+// that belongs in parameters on frame_parse - see rtl/examples/ for two
+// configurations that differ only in those.
 //
 // The IHL is assumed to be 5 (a 20-byte IPv4 header with no options). Real
-// market data feeds do not use IP options, and assuming it is what allows every
-// payload offset to be a compile-time constant instead of a runtime addition -
-// the difference between a comparator and an adder in the critical path.
+// feeds do not use IP options, and assuming it is what allows every payload
+// offset to be a compile-time constant instead of a runtime addition - the
+// difference between a comparator and an adder in the critical path.
 //
 // Every offset is declared at the counter's own width. Declaring them as plain
 // `int` reads more naturally but makes each comparison a 32-bit-against-11-bit
@@ -40,22 +38,24 @@ package pkt_pkg;
   localparam off_t OFF_IP_PROTO     = 11'd23;
   localparam off_t OFF_UDP_DPORT_HI = 11'd36;
   localparam off_t OFF_UDP_DPORT_LO = 11'd37;
-  localparam off_t OFF_MSG_TYPE_HI  = 11'd42;
-  localparam off_t OFF_MSG_TYPE_LO  = 11'd43;
-  localparam off_t OFF_SYMBOL_HI    = 11'd44;
-  localparam off_t OFF_SYMBOL_LO    = 11'd45;
-  localparam off_t OFF_PRICE_B3     = 11'd46;   // big-endian on the wire
-  localparam off_t OFF_PRICE_B2     = 11'd47;
-  localparam off_t OFF_PRICE_B1     = 11'd48;
-  localparam off_t OFF_PRICE_B0     = 11'd49;
 
-  // The last byte the filter decision depends on. Deciding here, rather than at
-  // end-of-frame, is the entire latency argument of this design: a 64-byte
-  // minimum Ethernet frame is 64 cycles on an 8-bit datapath, and this commits
-  // at cycle 45 regardless of how long the frame turns out to be.
-  localparam off_t OFF_DECISION = OFF_SYMBOL_LO;
+  // Where the application payload begins: 14 (Ethernet) + 20 (IPv4) + 8 (UDP).
+  localparam off_t OFF_PAYLOAD = 11'd42;
 
   localparam logic [15:0] ETHERTYPE_IPV4 = 16'h0800;
   localparam logic [7:0]  IP_PROTO_UDP   = 8'h11;
+
+  // The decision byte is not a constant of the design - it is a property of the
+  // configuration. It is wherever the LAST field being matched on ends, because
+  // that is the earliest point at which the answer is knowable and the latest
+  // point at which anything can still change it.
+  //
+  // Elaborating it from the configured field offsets rather than hard-coding it
+  // means a config that moves a match field automatically moves the decision,
+  // and the testbench can assert the resulting latency without being told.
+  function automatic off_t decision_offset(off_t field_a_hi, off_t field_b_hi);
+    off_t later = (field_a_hi > field_b_hi) ? field_a_hi : field_b_hi;
+    return later + off_t'(1);   // +1: a 16-bit field ends on its second byte
+  endfunction
 
 endpackage

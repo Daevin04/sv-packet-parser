@@ -1,44 +1,25 @@
-# Lint and simulate on every push.
+# Lint and simulate every example configuration on every push.
 #
-# The point of running this in CI rather than locally is that the repo's front
-# page then carries a pipeline badge showing the testbench passes - which is
-# evidence a reader gets without cloning anything or taking your word for it.
+# The point of running this in CI rather than only locally is that the repo's
+# front page then carries a pipeline badge - evidence a reader gets without
+# cloning anything or taking your word for it.
 
 image: python:3.12-slim
 
-stages:
-  - lint
-  - test
-
-# Verilator from Debian is a few versions behind upstream but stable, and
-# avoids a 10-minute source build on every pipeline.
-.setup: &setup
+verify:
   before_script:
+    # Verilator from Debian is a few versions behind upstream but stable, and
+    # avoids a 10-minute source build on every pipeline.
     - apt-get update -qq
     - DEBIAN_FRONTEND=noninteractive apt-get install -y -qq verilator make g++
     - pip install -q --disable-pip-version-check 'cocotb>=1.9,<2.0'
-    - verilator --version
-
-lint:
-  stage: lint
-  <<: *setup
   script:
-    # -Wall, and warnings are failures. In RTL a width mismatch or an inferred
-    # latch is a bug that has not happened yet, not a style opinion.
-    - >
-      verilator --lint-only -Wall --timing
-      rtl/pkt_pkg.sv rtl/frame_parse.sv rtl/resp_gen.sv rtl/parser_top.sv
-      --top-module parser_top
-
-simulate:
-  stage: test
-  <<: *setup
-  script:
+    # Lints both configurations with -Wall as errors, then simulates both.
     - bash scripts/run_tests.sh
   artifacts:
     when: always
     paths:
-      - tb/results.xml
+      - tb/results_*.xml
     reports:
-      junit: tb/results.xml
+      junit: tb/results_*.xml
     expire_in: 30 days

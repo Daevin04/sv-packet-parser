@@ -8,10 +8,13 @@
 module parser_top
   import pkt_pkg::*;
 #(
-  parameter logic [15:0] FILTER_PORT   = 16'd5000,
-  parameter logic [15:0] FILTER_MSG    = 16'h0001,
-  parameter logic [15:0] FILTER_SYMBOL = 16'd42,
-  parameter int          RESP_BYTES    = 8
+  parameter logic [15:0] FILTER_PORT = 16'd5000,
+  parameter off_t        F0_OFF      = OFF_PAYLOAD,
+  parameter logic [15:0] F0_VAL      = 16'h0001,
+  parameter off_t        F1_OFF      = OFF_PAYLOAD + 11'd2,
+  parameter logic [15:0] F1_VAL      = 16'd42,
+  parameter off_t        CAP_OFF     = OFF_PAYLOAD + 11'd4,
+  parameter int          RESP_BYTES  = 8
 ) (
   input  logic        clk,
   input  logic        rst_n,
@@ -29,8 +32,8 @@ module parser_top
   // Statistics.
   output logic [15:0] latency_cycles,   // SOF -> first response byte
   output logic        latency_valid,    // one-cycle pulse when updated
-  output logic [31:0] price,
-  output logic        price_valid,
+  output logic [31:0] capture,
+  output logic        capture_valid,
   output logic [15:0] match_count,
   output logic [15:0] overrun_count
 );
@@ -38,19 +41,22 @@ module parser_top
   logic match;
 
   frame_parse #(
-    .FILTER_PORT   (FILTER_PORT),
-    .FILTER_MSG    (FILTER_MSG),
-    .FILTER_SYMBOL (FILTER_SYMBOL)
+    .FILTER_PORT (FILTER_PORT),
+    .F0_OFF      (F0_OFF),
+    .F0_VAL      (F0_VAL),
+    .F1_OFF      (F1_OFF),
+    .F1_VAL      (F1_VAL),
+    .CAP_OFF     (CAP_OFF)
   ) u_parse (
-    .clk         (clk),
-    .rst_n       (rst_n),
-    .in_valid    (in_valid),
-    .in_sof      (in_sof),
-    .in_eof      (in_eof),
-    .in_data     (in_data),
-    .match       (match),
-    .price       (price),
-    .price_valid (price_valid)
+    .clk           (clk),
+    .rst_n         (rst_n),
+    .in_valid      (in_valid),
+    .in_sof        (in_sof),
+    .in_eof        (in_eof),
+    .in_data       (in_data),
+    .match         (match),
+    .capture       (capture),
+    .capture_valid (capture_valid)
   );
 
   resp_gen #(

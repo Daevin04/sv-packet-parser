@@ -1,12 +1,13 @@
-# cocotb + Verilator simulation.
+# cocotb + Verilator simulation, one example configuration at a time.
 #
-#   make            run the testbench
-#   make SIM=icarus run under Icarus instead (slower, different SV support)
-#   make waves      run and dump a VCD to dump.vcd
+#   make CONFIG=market       exchange market-data filter  (default)
+#   make CONFIG=telemetry    sensor telemetry filter
+#   make waves CONFIG=...    same, dumping a VCD
 #   make clean
 
 SIM           ?= verilator
 TOPLEVEL_LANG ?= verilog
+CONFIG        ?= market
 
 RTL := $(realpath ..)/rtl
 
@@ -15,10 +16,16 @@ VERILOG_SOURCES := \
 	$(RTL)/pkt_pkg.sv \
 	$(RTL)/frame_parse.sv \
 	$(RTL)/resp_gen.sv \
-	$(RTL)/parser_top.sv
+	$(RTL)/parser_top.sv \
+	$(RTL)/examples/$(CONFIG)_filter_top.sv
 
-TOPLEVEL := parser_top
-MODULE   := test_parser
+TOPLEVEL := $(CONFIG)_filter_top
+MODULE   := test_$(CONFIG)
+
+# Keep each configuration's build and results separate, so running one does not
+# quietly overwrite the other's evidence.
+SIM_BUILD    := sim_build_$(CONFIG)
+COCOTB_RESULTS_FILE := results_$(CONFIG).xml
 
 # -Wall is deliberate. Lint warnings in RTL are usually real bugs waiting for a
 # corner case, and this design is small enough that there is no excuse for any.

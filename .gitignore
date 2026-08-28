@@ -1,6 +1,6 @@
-sim_build/
-tb/sim_build/
-tb/results.xml
+sim_build*/
+tb/sim_build*/
+tb/results*.xml
 tb/dump.vcd
 tb/*.vcd
 obj_dir/
