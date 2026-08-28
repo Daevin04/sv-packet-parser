@@ -1,0 +1,12 @@
+# Force LF on everything the toolchain executes. Git on Windows will otherwise
+# hand these back with CRLF on the next checkout, and bash fails on the stray
+# carriage return with an error that points at the wrong line - while make
+# treats it as part of the target name and reports a missing rule.
+* text=auto eol=lf
+
+*.sh      text eol=lf
+Makefile  text eol=lf
+*.sv      text eol=lf
+*.py      text eol=lf
+*.yml     text eol=lf
+*.md      text eol=lf
