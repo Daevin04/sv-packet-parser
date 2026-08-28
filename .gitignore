@@ -1,0 +1,19 @@
+sim_build/
+tb/sim_build/
+tb/results.xml
+tb/dump.vcd
+tb/*.vcd
+obj_dir/
+__pycache__/
+*.pyc
+# Vivado
+*.jou
+*.log
+*.str
+.Xil/
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+*.gen/
